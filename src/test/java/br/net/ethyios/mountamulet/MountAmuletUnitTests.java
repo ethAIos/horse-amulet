@@ -19,6 +19,8 @@ public final class MountAmuletUnitTests {
     public static void main(String[] args) throws IOException {
         storedMountCopiesEntityTag();
         storedMountRejectsEmptyTag();
+        sanitizePersistentTagRemovesTransientValues();
+        sanitizePersistentTagKeepsPersistentValues();
         ownershipAcceptsOwnedHorse();
         ownershipRejectsOtherOwner();
         ownershipRejectsUnsupportedEntity();
@@ -47,6 +49,32 @@ public final class MountAmuletUnitTests {
 
         assertContains(exception.getMessage(), "{}", "error includes offending value");
         assertContains(exception.getMessage(), "non-empty CompoundTag", "error includes expected shape");
+    }
+
+    private static void sanitizePersistentTagRemovesTransientValues() {
+        CompoundTag sourceTag = new CompoundTag();
+        sourceTag.putString("Pos", "0,64,0");
+        sourceTag.putString("UUID", "legacy");
+        sourceTag.putString("Brain", "ai-state");
+
+        CompoundTag sanitizedTag = MountCapture.sanitizePersistentTag(sourceTag);
+
+        assertFalse(sanitizedTag.contains("Pos"), "position data removed");
+        assertFalse(sanitizedTag.contains("UUID"), "uuid removed");
+        assertFalse(sanitizedTag.contains("Brain"), "brain removed");
+    }
+
+    private static void sanitizePersistentTagKeepsPersistentValues() {
+        CompoundTag sourceTag = new CompoundTag();
+        sourceTag.putString("CustomName", "Sprinter");
+        sourceTag.putFloat("Health", 26.0F);
+        sourceTag.putBoolean("Tame", true);
+
+        CompoundTag sanitizedTag = MountCapture.sanitizePersistentTag(sourceTag);
+
+        assertEquals("Sprinter", sanitizedTag.getString("CustomName"), "custom name preserved");
+        assertEquals(26.0F, sanitizedTag.getFloat("Health"), "health preserved");
+        assertTrue(sanitizedTag.getBoolean("Tame"), "tame state preserved");
     }
 
     private static void ownershipAcceptsOwnedHorse() {
@@ -148,6 +176,12 @@ public final class MountAmuletUnitTests {
 
     private static void assertEquals(String expected, String actual, String message) {
         if (!expected.equals(actual)) {
+            throw new AssertionError(message + ": expected " + expected + " got " + actual);
+        }
+    }
+
+    private static void assertEquals(float expected, float actual, String message) {
+        if (Float.compare(expected, actual) != 0) {
             throw new AssertionError(message + ": expected " + expected + " got " + actual);
         }
     }
