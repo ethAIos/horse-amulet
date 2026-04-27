@@ -28,6 +28,7 @@ sourceSets.main.resources {
 
 repositories {
     // Add here additional repositories if required by some of the dependencies below.
+    mavenCentral()
 }
 
 base {
@@ -103,9 +104,14 @@ neoForge {
         // define mod <-> source bindings
         // these are used to tell the game which sources are for which mod
         // multi mod projects should define one per mod
-        "${mod_id}" {
+        mount_amulet {
             sourceSet(sourceSets.main)
         }
+    }
+
+    unitTest {
+        enable()
+        testedMod = mods.mount_amulet
     }
 }
 
@@ -117,10 +123,10 @@ configurations {
     runtimeClasspath.extendsFrom localRuntime
 }
 
-sourceSets.test.compileClasspath += sourceSets.main.compileClasspath
-sourceSets.test.runtimeClasspath += sourceSets.main.runtimeClasspath
-
 dependencies {
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.7.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
     // Example optional mod dependency with JEI
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime
     // compileOnly "mezz.jei:jei-${mc_version}-common-api:${jei_version}"
@@ -144,21 +150,9 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
 }
 
-tasks.register('unitTest', JavaExec) {
-    group = 'verification'
-    description = 'Runs fast project unit tests without external test dependencies.'
-    dependsOn tasks.named('testClasses')
-    classpath = sourceSets.test.runtimeClasspath
-    mainClass = 'br.net.ethyios.mountamulet.MountAmuletUnitTests'
-}
-
 tasks.named('test') {
-    // unitTest owns assertions so the build stays independent from external test frameworks.
-    enabled = false
-}
-
-tasks.named('check') {
-    dependsOn tasks.named('unitTest')
+    systemProperty 'mountamulet.projectDir', project.projectDir.absolutePath
+    useJUnitPlatform()
 }
 
 // This block of code expands all declared replace properties in the specified resource targets.
@@ -195,7 +189,7 @@ publishing {
     }
     repositories {
         maven {
-            url "file://${project.projectDir}/repo"
+            url = file("repo").toURI()
         }
     }
 }
