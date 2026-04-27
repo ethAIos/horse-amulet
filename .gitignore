@@ -1,11 +1,5 @@
 .agents/
-.agents/*
-
-./docs
-./docs/plans/
-./docs/plans/*
-./docs/specs/
-./docs/specs/*
+docs/
 
 ### Gradle ###
 .gradle
